@@ -38,32 +38,9 @@ func main() {
 			startDate, _ := cmd.Flags().GetString("start")
 			endDate, _ := cmd.Flags().GetString("end")
 			lastWeek, _ := cmd.Flags().GetBool("last-week")
-			var from, to time.Time
-			var err error
-			if lastWeek {
-				now := time.Now()
-				// Get last Monday
-				daysSinceMonday := int(now.Weekday()) - 1
-				if daysSinceMonday < 0 {
-					daysSinceMonday = 6
-				}
-				lastMonday := now.AddDate(0, 0, -daysSinceMonday-7)
-				lastSunday := lastMonday.AddDate(0, 0, 6)
-				lastSunday = time.Date(lastSunday.Year(), lastSunday.Month(), lastSunday.Day(), 23, 59, 59, 0, lastSunday.Location())
-				from = lastMonday
-				to = lastSunday
-			} else if startDate != "" && endDate != "" {
-				from, err = time.Parse("2006-01-02", startDate)
-				if err != nil {
-					return fmt.Errorf("invalid start date format: %v", err)
-				}
-				to, err = time.Parse("2006-01-02", endDate)
-				if err != nil {
-					return fmt.Errorf("invalid end date format: %v", err)
-				}
-				to = time.Date(to.Year(), to.Month(), to.Day(), 23, 59, 59, 0, to.Location())
-			} else {
-				return fmt.Errorf("please specify --last-week or both --start and --end dates")
+			from, to, err := resolveRange(lastWeek, startDate, endDate, time.Now())
+			if err != nil {
+				return err
 			}
 
 			fmt.Printf("Analyzing calendar from %s to %s\n\n", from.Format("Jan 2"), to.Format("Jan 2, 2006"))
@@ -106,6 +83,38 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+// resolveRange computes the analysis window. With lastWeek set, it returns the
+// previous Monday-to-Sunday week relative to now; otherwise it parses the
+// explicit start/end dates (end extended to end-of-day).
+func resolveRange(lastWeek bool, startDate, endDate string, now time.Time) (time.Time, time.Time, error) {
+	if lastWeek {
+		daysSinceMonday := int(now.Weekday()) - 1
+		if daysSinceMonday < 0 {
+			daysSinceMonday = 6
+		}
+		lastMonday := now.AddDate(0, 0, -daysSinceMonday-7)
+		lastMonday = time.Date(lastMonday.Year(), lastMonday.Month(), lastMonday.Day(), 0, 0, 0, 0, lastMonday.Location())
+		lastSunday := lastMonday.AddDate(0, 0, 6)
+		lastSunday = time.Date(lastSunday.Year(), lastSunday.Month(), lastSunday.Day(), 23, 59, 59, 0, lastSunday.Location())
+		return lastMonday, lastSunday, nil
+	}
+
+	if startDate == "" || endDate == "" {
+		return time.Time{}, time.Time{}, fmt.Errorf("please specify --last-week or both --start and --end dates")
+	}
+
+	from, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid start date format: %v", err)
+	}
+	to, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid end date format: %v", err)
+	}
+	to = time.Date(to.Year(), to.Month(), to.Day(), 23, 59, 59, 0, to.Location())
+	return from, to, nil
 }
 
 func displayResults(a *analysis.WeekAnalysis) {
