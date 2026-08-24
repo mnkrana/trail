@@ -21,7 +21,7 @@ A simple CLI tool to analyze your Google Calendar events for the last week. Trac
    - Go to APIs & Services → Credentials
    - Click "Create Credentials" → "OAuth client ID"
    - Application type: "Desktop app" (or "Web application" with redirect URI)
-   - Add redirect URI: `http://localhost:8080/callback`
+   - Add redirect URI: `http://localhost:8080/api/oauth/calendar/callback`
 5. Download the credentials or copy the Client ID and Secret
 
 ### 2. Environment Setup
@@ -34,8 +34,6 @@ cp .env.example .env
 OAUTH_CLIENT_ID="your_client_id_here"
 OAUTH_CLIENT_SECRET="your_client_secret_here"
 ```
-
-> The OAuth client must have `http://localhost:8080/api/oauth/calendar/callback` in its authorized redirect URIs (Google Cloud Console → Credentials → your OAuth client). This is the same URI used by the taal-go project.
 
 ### 3. Build and Run
 
