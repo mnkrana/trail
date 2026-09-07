@@ -52,7 +52,8 @@ trail configure
 ```
 
 You'll be prompted for your OAuth Client ID and Client Secret, which are saved to
-`~/.config/trail/config.json` (with `0600` permissions).
+`~/.config/trail/config.json` on Linux and `~/Library/Application Support/trail/config.json`
+on macOS (with `0600` permissions).
 
 Alternatively, you can set environment variables instead of using `trail configure`:
 
@@ -70,7 +71,7 @@ export OAUTH_CLIENT_SECRET="your_client_secret_here"
 trail auth
 ```
 
-This starts a local server on `localhost:8080`, opens your browser to the Google consent screen, captures the code automatically, and saves tokens to `~/.config/trail/tokens.json`.
+This starts a local server on `localhost:8080`, opens your browser to the Google consent screen, captures the code automatically, and saves tokens to `~/.config/trail/tokens.json` on Linux or `~/Library/Application Support/trail/tokens.json` on macOS.
 
 ### 4. Run
 
