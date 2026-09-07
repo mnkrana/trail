@@ -14,13 +14,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var version = "0.1.0"
+
 func main() {
 	// Load .env file if present
 	godotenv.Load()
 
 	var rootCmd = &cobra.Command{
-		Use:   "trail",
-		Short: "Calendar analytics CLI - track your weekly progress",
+		Use:     "trail",
+		Short:   "Calendar analytics CLI - track your weekly progress",
+		Version: version,
 	}
 
 	var authCmd = &cobra.Command{
