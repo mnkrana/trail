@@ -9,6 +9,27 @@ A simple CLI tool to analyze your Google Calendar events for the last week. Trac
 - 📊 Time breakdown by category
 - 📈 Daily summary with event counts
 - 🔐 Secure OAuth2 authentication with token persistence
+- 🚀 Install directly with `go install` — no cloning needed
+
+## Install
+
+Requires Go 1.23+.
+
+```bash
+go install github.com/mnkrana/trail@latest
+```
+
+This puts the `trail` binary in `$GOPATH/bin`, so make sure that's on your `PATH`:
+
+```bash
+export PATH="$PATH:$(go env GOPATH)/bin"
+```
+
+Check the version:
+
+```bash
+trail --version
+```
 
 ## Setup
 
@@ -22,53 +43,43 @@ A simple CLI tool to analyze your Google Calendar events for the last week. Trac
    - Click "Create Credentials" → "OAuth client ID"
    - Application type: "Desktop app" (or "Web application" with redirect URI)
    - Add redirect URI: `http://localhost:8080/api/oauth/calendar/callback`
-5. Download the credentials or copy the Client ID and Secret
+5. Note the Client ID and Client Secret
 
-### 2. Environment Setup
+### 2. Configure Credentials (one-time)
 
 ```bash
-# Copy the example env file
-cp .env.example .env
-
-# Edit .env with your credentials
-OAUTH_CLIENT_ID="your_client_id_here"
-OAUTH_CLIENT_SECRET="your_client_secret_here"
+trail configure
 ```
 
-### 3. Build and Run
+You'll be prompted for your OAuth Client ID and Client Secret, which are saved to
+`~/.config/trail/config.json` (with `0600` permissions).
+
+Alternatively, you can set environment variables instead of using `trail configure`:
 
 ```bash
-# Build the tool
-go build -o trail .
-
-# Authenticate (one-time)
-./trail auth
-
-# Run for last week
-./trail run --last-week
-
-# Run for specific date range
-./trail run --start 2024-01-15 --end 2024-01-21
+export OAUTH_CLIENT_ID="your_client_id_here"
+export OAUTH_CLIENT_SECRET="your_client_secret_here"
 ```
 
-## Usage
+> If you set the environment variables, they take precedence over the config file.
+> You can also put them in a `.env` file in the directory you run `trail` from.
 
-### 1. Authenticate (one-time)
+### 3. Authenticate (one-time)
 
 ```bash
-./trail auth
+trail auth
 ```
 
 This starts a local server on `localhost:8080`, opens your browser to the Google consent screen, captures the code automatically, and saves tokens to `~/.config/trail/tokens.json`.
 
-### 2. Analyze
+### 4. Run
 
 ```bash
 # Last week (Monday to Sunday)
-./trail run --last-week
+trail run --last-week
 
 # Specific date range
-./trail run --start 2024-01-15 --end 2024-01-21
+trail run --start 2024-01-15 --end 2024-01-21
 ```
 
 Future runs are silent — no auth prompt. If you haven't authenticated, it tells you to run `trail auth` first.
