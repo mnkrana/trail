@@ -25,18 +25,26 @@ type TokenData struct {
 	Expiry       time.Time `json:"expiry"`
 }
 
-func NewOAuthConfig() *oauth2.Config {
+func NewOAuthConfig() (*oauth2.Config, error) {
+	clientID, clientSecret, err := ResolveCredentials()
+	if err != nil {
+		return nil, err
+	}
+
 	return &oauth2.Config{
-		ClientID:     os.Getenv("OAUTH_CLIENT_ID"),
-		ClientSecret: os.Getenv("OAUTH_CLIENT_SECRET"),
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
 		Endpoint:     google.Endpoint,
 		RedirectURL:  "http://localhost:8080/api/oauth/calendar/callback",
 		Scopes:       []string{calendar.CalendarReadonlyScope},
-	}
+	}, nil
 }
 
 func NewClient(ctx context.Context) (*Client, error) {
-	cfg := NewOAuthConfig()
+	cfg, err := NewOAuthConfig()
+	if err != nil {
+		return nil, err
+	}
 
 	tokens, err := loadTokens()
 	if err != nil {

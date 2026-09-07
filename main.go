@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -25,8 +27,19 @@ func main() {
 		Use:   "auth",
 		Short: "Authenticate with Google Calendar (one-time)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg := calendar.NewOAuthConfig()
+			cfg, err := calendar.NewOAuthConfig()
+			if err != nil {
+				return err
+			}
 			return calendar.RunAuthServer(cmd.Context(), cfg)
+		},
+	}
+
+	var configureCmd = &cobra.Command{
+		Use:   "configure",
+		Short: "Enter your Google OAuth credentials (one-time)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runConfigure()
 		},
 	}
 
@@ -76,13 +89,60 @@ func main() {
 	runCmd.Flags().String("start", "", "Start date (YYYY-MM-DD)")
 	runCmd.Flags().String("end", "", "End date (YYYY-MM-DD)")
 
-	rootCmd.AddCommand(authCmd, runCmd)
+	rootCmd.AddCommand(authCmd, configureCmd, runCmd)
 	rootCmd.SetArgs(os.Args[1:])
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+// runConfigure interactively prompts for Google OAuth credentials and saves
+// them to ~/.config/trail/config.json. These are used by 'trail auth' when the
+// OAUTH_CLIENT_ID / OAUTH_CLIENT_SECRET environment variables are not set.
+func runConfigure() error {
+	if calendar.HasConfig() {
+		fmt.Print("Credentials already exist. Overwrite? [y/N]: ")
+		reader := bufio.NewReader(os.Stdin)
+		answer, _ := reader.ReadString('\n')
+		answer = strings.TrimSpace(strings.ToLower(answer))
+		if answer != "y" && answer != "yes" {
+			fmt.Println("Aborted.")
+			return nil
+		}
+	}
+
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Print("OAuth Client ID: ")
+	clientID, err := reader.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	clientID = strings.TrimSpace(clientID)
+
+	fmt.Print("OAuth Client Secret: ")
+	clientSecret, err := reader.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	clientSecret = strings.TrimSpace(clientSecret)
+
+	if clientID == "" || clientSecret == "" {
+		return fmt.Errorf("client ID and client secret cannot be empty")
+	}
+
+	if err := calendar.SaveConfig(&calendar.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+	}); err != nil {
+		return fmt.Errorf("failed to save credentials: %w", err)
+	}
+
+	fmt.Println("Credentials saved to ~/.config/trail/config.json")
+	fmt.Println("Next, run 'trail auth' to authenticate with Google Calendar.")
+	return nil
 }
 
 // resolveRange computes the analysis window. With lastWeek set, it returns the
